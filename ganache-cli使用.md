@@ -1,0 +1,2 @@
+ganache-cli使用ethereumjs来模拟全节点行为并且可以更快地开发以太坊应用
+
