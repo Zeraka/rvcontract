@@ -35,8 +35,8 @@ let parseBpmn = bpmnDoc => {
 let is = (element, type) => element.$instanceOf(type);
 let collectControlFlowInfo: (proc: any, globalNodeMap: Map<string, any>, globalControlFlowInfo: Array<ControlFlowInfo>) => ControlFlowInfo;
 collectControlFlowInfo = (proc: any,
-                          globalNodeMap: Map<string, any>,
-                          globalControlFlowInfo: Array<ControlFlowInfo>): ControlFlowInfo => {
+    globalNodeMap: Map<string, any>,
+    globalControlFlowInfo: Array<ControlFlowInfo>): ControlFlowInfo => {
     let nodeList: Array<string> = [];
     let edgeList: Array<string> = [];
     let boundaryEvents: Array<string> = [];
@@ -178,13 +178,13 @@ let restrictRelation: Map<string, any> = new Map();
 
 
 let extractParameters = (cad, nodeId, controlFlowInfo) => {
-        // Extracting Roles from UserTasks functionBody
+    // Extracting Roles from UserTasks functionBody
 
     let arr = cad.split('@');
-    if(arr.length >= 3) {
-        if(controlFlowInfo != null)
+    if (arr.length >= 3) {
+        if (controlFlowInfo != null)
             controlFlowInfo.taskRoleMap.set(nodeId, arr[1].trim());
-        if(arr[2].length > 1)
+        if (arr[2].length > 1)
             cad = arr[2];
         else
             return undefined;
@@ -294,6 +294,23 @@ export let parseModel = (modelInfo: ModelInfo) => {
                 let proc = definitions.diagrams[0].plane.bpmnElement;
                 modelInfo.name = proc.name ? proc.name.replace(/\s+/g, "_") : proc.id;
                 modelInfo.id = proc.id;
+                /**
+                console.log(modelInfo.bpmn)
+                console.log("@@@@@@@@@@@@@@@@@@@@")
+                console.log("The exp of LTL is "+proc.LTLEXP)
+                console.log(proc)
+                console.log("@@@@@@@@@@@@@@@@@@")
+                */
+
+                /**
+                 * 读取LTL表达式，通过表达式生成监控器。
+                 * 同时LTL表达式被分解,
+                 * 
+                 */
+                var ltl = proc.LTLEXP;
+                
+
+
                 if (proc.$type !== "bpmn:Process") {
                     if (proc.$type === "bpmn:Collaboration") {
                         for (let i = 0; i < definitions.rootElements.length; i++)
@@ -571,25 +588,25 @@ export let parseModel = (modelInfo: ModelInfo) => {
                                 return res;
                             },
                             getTerminateCandidates: (subprocId) => {
-                              let res = [];
-                              globalNodeMap.forEach(node => {
-                                  if (node.eventDefinitions && node.eventDefinitions[0]) {
-                                      if (is(node, "bpmn:BoundaryEvent") && node.cancelActivity == false) {
-                                         if(globalControlFlowInfoMap.has(node.id)) {
-                                           let localC = globalControlFlowInfoMap.get(node.id);
-                                           localC.nodeList.forEach(elemId => {
-                                              let elem = globalNodeMap.get(elemId);
-                                              if(elem.eventDefinitions && is(elem.eventDefinitions[0], "bpmn:TerminateEventDefinition") && elem.$parent.id === node.$parent.id)
-                                                  res.push(node.id);
-                                           })
+                                let res = [];
+                                globalNodeMap.forEach(node => {
+                                    if (node.eventDefinitions && node.eventDefinitions[0]) {
+                                        if (is(node, "bpmn:BoundaryEvent") && node.cancelActivity == false) {
+                                            if (globalControlFlowInfoMap.has(node.id)) {
+                                                let localC = globalControlFlowInfoMap.get(node.id);
+                                                localC.nodeList.forEach(elemId => {
+                                                    let elem = globalNodeMap.get(elemId);
+                                                    if (elem.eventDefinitions && is(elem.eventDefinitions[0], "bpmn:TerminateEventDefinition") && elem.$parent.id === node.$parent.id)
+                                                        res.push(node.id);
+                                                })
 
-                                         } else {
-                                           console.log('Missing Non Interrupting event');
-                                         }
-                                      }
-                                  }
-                              });
-                              return res;
+                                            } else {
+                                                console.log('Missing Non Interrupting event');
+                                            }
+                                        }
+                                    }
+                                });
+                                return res;
                             },
                             getProcessCandidatesMaskFrom: (evtId, evtType, evtCode, sourceProcesses, allEvents) => {
                                 let eventList = [];
@@ -781,25 +798,25 @@ export let parseModel = (modelInfo: ModelInfo) => {
                                 globalNodeMap.forEach(node => {
                                     if (node.eventDefinitions && node.eventDefinitions[0]) {
                                         if (is(node, "bpmn:BoundaryEvent") && node.cancelActivity == false) {
-                                           if(globalControlFlowInfoMap.has(node.id)) {
-                                             let localC = globalControlFlowInfoMap.get(node.id);
-                                             localC.nodeList.forEach(elemId => {
-                                                let elem = globalNodeMap.get(elemId);
-                                                if(elem.eventDefinitions && is(elem.eventDefinitions[0], "bpmn:TerminateEventDefinition") && elem.$parent.id === node.$parent.id && controlFlowInfo.nodeList.indexOf(node.$parent.id) >= 0 && res.indexOf(node.$parent.id) < 0 && node.$parent.id != controlFlowInfo.self.id) {
-                                                    res.push(node.$parent.id);
-                                                }
-                                             })
-                                           }
+                                            if (globalControlFlowInfoMap.has(node.id)) {
+                                                let localC = globalControlFlowInfoMap.get(node.id);
+                                                localC.nodeList.forEach(elemId => {
+                                                    let elem = globalNodeMap.get(elemId);
+                                                    if (elem.eventDefinitions && is(elem.eventDefinitions[0], "bpmn:TerminateEventDefinition") && elem.$parent.id === node.$parent.id && controlFlowInfo.nodeList.indexOf(node.$parent.id) >= 0 && res.indexOf(node.$parent.id) < 0 && node.$parent.id != controlFlowInfo.self.id) {
+                                                        res.push(node.$parent.id);
+                                                    }
+                                                })
+                                            }
                                         }
                                     }
                                 });
                                 controlFlowInfo.nodeList.forEach(nodeId => {
                                     let node = globalNodeMap.get(nodeId);
                                     if (node.eventDefinitions && is(node.eventDefinitions[0], "bpmn:TerminateEventDefinition")) {
-                                      if(res.indexOf(node.$parent.id) < 0 && node.$parent.id != controlFlowInfo.self.id && !is(globalNodeMap.get(controlFlowInfo.self.id), "bpmn:BoundaryEvent")) {
-                                          console.log('I am here 2');
-                                          res.push(node.$parent.id);
-                                      }
+                                        if (res.indexOf(node.$parent.id) < 0 && node.$parent.id != controlFlowInfo.self.id && !is(globalNodeMap.get(controlFlowInfo.self.id), "bpmn:BoundaryEvent")) {
+                                            console.log('I am here 2');
+                                            res.push(node.$parent.id);
+                                        }
                                     }
                                 });
                                 return res;
@@ -948,14 +965,14 @@ export let parseModel = (modelInfo: ModelInfo) => {
                                     .forEach(node => {
                                         if (node.$parent && children.indexOf(node.$parent.id) >= 0) {
                                             bitarray[globalNodeIndexMap.get(node.id)] = 1;
-                                          }
+                                        }
                                     });
                                 catchingMessages
                                     .map(evtId => globalNodeMap.get(evtId))
                                     .forEach(evt => {
                                         if (evt.attachedToRef && children.indexOf(evt.attachedToRef) >= 0) {
                                             bitarray[globalNodeIndexMap.get(evt.id)] = 1;
-                                          }
+                                        }
                                     });
                                 for (let i = bitarray.length - 1; i >= 0; i--)
                                     result += bitarray[i] ? "1" : "0";
@@ -1186,7 +1203,7 @@ export let parseModel = (modelInfo: ModelInfo) => {
                                     : flowEdge.name ? flowEdge.name : flowEdge.id,
                             is: is
                         };
-
+                        //生成solidity代码,
                         let localSolidity = bpmn2solTemplate(codeGenerationInfo);
 
                         // Code for using the WorkList template
@@ -1276,27 +1293,35 @@ export let parseModel = (modelInfo: ModelInfo) => {
                             is: is
                         };
 
-                        
+                        /**
+                         * 处理生成的solidity代码
+                         * 提取出其中的LTL表达式
+                         * 调用SPOT库解析表达式，提取出所有原子命题
+                         * 
+                         */
+
                         var tmpsol = localSolidity.split('\n');
                         var newstr = '';
                         var i = 0;
-                       
-                        for (i = 0; i < tmpsol.length; ++i)
-                        {
-                            
-                            if (tmpsol[i].indexOf("Contract") != -1 && tmpsol[i].indexOf("contract ") != -1)
-                            {
-                               
-                                tmpsol[i] += '\nevent Logger(address who);\n'
+
+                        for (i = 0; i < tmpsol.length; ++i) {
+                            /*找到以xxx_Contract开头的函数的位置,在下一行声明event类型的对象。*/
+                            if (tmpsol[i].indexOf("Contract") != -1 && tmpsol[i].indexOf("contract ") != -1) {
+
+                                tmpsol[i] += '\nevent Logger(string NodeName);\n'//声明事件类型
                                 //console.log(tmpsol[i]);
                             }
-                            newstr = newstr + tmpsol[i] + '\n';
+                            /*找到LTL属性中对应的事件的函数的位置，在下一行放入*/
+
+                            newstr = newstr + tmpsol[i] + '\n';//重新拼接
+
+
                         }
                         //console.log("newstr is \n"+newstr);
                         //localSolidity = newstr;
                         //modelInfo.solidity += localSolidity;
                         modelInfo.solidity += newstr;
-                        
+
                         if (userTaskList.length > 0) {
                             modelInfo.solidity += workList2solTemplate(workListGenerationInfo);
                         }

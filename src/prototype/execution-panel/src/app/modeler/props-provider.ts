@@ -19,11 +19,13 @@ var processProps = require('bpmn-js-properties-panel/lib/provider/bpmn/parts/Pro
   multiInstanceLoopProps = require('bpmn-js-properties-panel/lib/provider/camunda/parts/MultiInstanceLoopProps');
 
 // Require your custom property entries.
-var spellProps = require('./parts/SpellProps');
+//var spellProps = require('./parts/SpellProps');
 var LTLProps = require('./parts/LTLProps');
-var DesignationProps = require('./parts/DesignationProps');
+//var DesignationProps = require('./parts/DesignationProps');
+var  globalVariblesProps = require("./parts/gvProps");
 
-
+var rollbackpointProps = require("./parts/rollbackpointProps");
+var invokeProps = require("./parts/invokeProps");
 
 
 // The general tab contains all bpmn relevant properties.
@@ -39,8 +41,10 @@ function createGeneralTabGroups(element: any, bpmnFactory: any, elementRegistry:
   idProps(generalGroup, element, elementRegistry);
   nameProps(generalGroup, element);
   processProps(generalGroup, element);
-  DesignationProps(generalGroup, element);
+  //DesignationProps(generalGroup, element);
 
+
+  
   const detailsGroup = {
     id: 'details',
     label: 'Details',
@@ -59,7 +63,6 @@ function createGeneralTabGroups(element: any, bpmnFactory: any, elementRegistry:
     label: 'Documentation',
     entries: new Array,
   };
-
   documentationProps(documentationGroup, element, bpmnFactory);
 
   return [
@@ -68,39 +71,40 @@ function createGeneralTabGroups(element: any, bpmnFactory: any, elementRegistry:
     documentationGroup
   ];
 }
-
 // Create the custom magic tab
 function createMagicTabGroups(element: any) {
 
   // Create a group called "Black Magic".
-  var blackMagicGroup = {
-    id: 'black-magic',
-    label: 'Black Magic',
+  const PropertiesGroup = {
+    id: 'Properties',
+    label: 'properties',
     entries: []
   };
-
+  LTLProps(PropertiesGroup, element);
+  globalVariblesProps(PropertiesGroup, element);
   // Add the spell props to the black magic group.
-  spellProps(blackMagicGroup, element);
+  //spellProps(blackMagicGroup, element);
 
   return [
-    blackMagicGroup
+    PropertiesGroup
   ];
 }
-function createLTLTabGroups(element: any) {
+function createParameterTabGroups(element: any) {
 
   // Create a group called "Black Magic".
-  var LTLGroup = {
-    id: 'LTL',
-    label: 'LTL',
+  const ParameterGroup = {
+    id: 'Parameter',
+    label: 'Parameter',
     entries: []
   };
-
-
+  
+  rollbackpointProps(ParameterGroup, element);
+  invokeProps(ParameterGroup, element);
   // Add the spell props to the black magic group.
-  LTLProps(LTLGroup, element);
+  //LTLProps(LTLGroup, element);
 
   return [
-    LTLGroup
+    ParameterGroup
   ];
 }
 
@@ -120,20 +124,20 @@ export function CustomPropertiesProvider(eventBus: any, bpmnFactory: any, elemen
 
     // The "magic" tab
     var magicTab = {
-      id: 'parameter',
-      label: 'Parameter',
+      id: 'Property',
+      label: 'Property',
       groups: createMagicTabGroups(element)
     };
-    var LTLTab = {
-      id: 'LTL',
-      label: 'LTL',
-      groups: createLTLTabGroups(element)
+    var ParameterTab = {
+      id: 'Parameter',
+      label: 'Parameter',
+      groups: createParameterTabGroups(element)
     };
 
     return [
       generalTab,
       magicTab,
-      LTLTab
+      ParameterTab
     ];
   };
 }

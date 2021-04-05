@@ -52,11 +52,11 @@ wss.on('connection', function connection(ws) {
 
 
 let executionAccount = 0
-
+//监听合约
 web3.eth.filter("latest", function (error, result) {
     if (!error) {
         try {
-            let info = web3.eth.getBlock(result);
+            let info = web3.eth.getBlock(result);//
             if (info.transactions.length > 0) {
                 //  // console.log('----------------------------------------------------------------------------------------------');
                 //  // console.log('NEW BLOCK MINED');
@@ -118,6 +118,7 @@ models.get('/processes', (req, res) => {
     if(processRegistryContract) {
         let registeredInstances = processRegistryContract.allInstances.call();
         registeredInstances.forEach(instance => {
+            //
             let repoID = web3.toAscii(processRegistryContract.bundleFor.call(instance)).toString().substr(0, 24);
             repoSchema.find({_id: repoID},
                 (err, repoData) => {
@@ -154,7 +155,9 @@ models.get('/models', (req, res) => {
             else {
                 repoData.forEach(data => {
                     if(web3.toAscii(processRegistryContract.childrenFor(data._id.toString(), 0)).toString().substr(0, 24) === data._id.toString()) {
-                        console.log({id: data._id, name: data.rootProcessName});
+                        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                        console.log({ id: data._id, name: data.rootProcessName });
+                        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                         actives.push({
                             id: data._id,
                             name: data.rootProcessName,
@@ -177,7 +180,9 @@ models.get('/models', (req, res) => {
 //////////////////////////////////////////////////////////////////////
 ///    CONFIGURATION (ProcessRegistry) REGISTRATION operations     ///
 //////////////////////////////////////////////////////////////////////
-
+/**
+ * registry对应着execution-panel的
+*/
 models.post('/registry', (req, res) => {
     console.log('DEPLOYING PROCESS RUNTIME REGISTRY ...');
     try {
@@ -189,10 +194,16 @@ models.post('/registry', (req, res) => {
         console.log('=============================================');
         console.log("SOLIDITY CODE");
         console.log('=============================================');
-        console.log(input['ProcessRegistry']);
+        console.log(input['ProcessRegistry']);//打印ProcessRegistry.sol代码内容
         console.log('....................................................................');
-    
-        let output = solc.compile({sources: input}, 1);
+        //编译
+        let output = solc.compile({ sources: input }, 1);//得到以上代码的二进制，output是存放这些二进制的json类型
+        /*
+        console.log("@@@@@@@@@@@@")
+        console.log(output)
+        console.log("@@@@@@@@@@@@")
+        */
+        
         if (Object.keys(output.contracts).length === 0) {
             res.status(400).send('COMPILATION ERROR IN RUNTIME REGISTRY SMART CONTRACTS');
             console.log('COMPILATION ERROR IN SMART CONTRACTS');
@@ -203,9 +214,10 @@ models.post('/registry', (req, res) => {
 
         console.log('PROCESS RUNTIME REGISTRY COMPILED SUCCESSFULLY');           
         console.log('CREATING RUNTIME REGISTRY INSTANCE ... ');
-
+        //发布上面的合约
         let ProcContract = web3.eth.contract(JSON.parse(output.contracts['ProcessRegistry:ProcessRegistry'].interface));
-            ProcContract.new(
+            
+        ProcContract.new(//部署合约，该部分合约是注册caterpillar引擎的合约
                 {
                     from: web3.eth.accounts[executionAccount],
                     data: "0x" + output.contracts['ProcessRegistry:ProcessRegistry'].bytecode,
@@ -231,7 +243,7 @@ models.post('/registry', (req, res) => {
                                     // registerModels(currentIndex, sortedElements, createdElementMap, modelInfo, contracts, res);
                                 }
                                 else {
-                                    processRegistryContract = contract;
+                                    processRegistryContract = contract;//registry合约代码
                                     let registryGas = web3.eth.getTransactionReceipt(contract.transactionHash).gasUsed;
                                     let idAsString = repoData._id.toString();
                                     console.log("Process Registry DEPLOYED and RUNNING at " + processRegistryContract.address.toString());
@@ -271,6 +283,7 @@ models.post('/registry/load', (req, res) => {
         registrySchema.find({_id: req.body.from},
             (err, repoData) => {
                 if (!err && repoData && repoData.length > 0) {
+                    //what is this?
                     processRegistryContract = web3.eth.contract(JSON.parse(repoData[0].abi)).at(repoData[0].address);
                     console.log('Registry Loaded Successfully');
                     res.status(200).send('Registry Loaded Successfully');
@@ -743,7 +756,7 @@ let searchRepository = (top: number, queue: Array<string>, processData: Map<stri
                     procesRoleContract
                     .then((solidity) => {
                         let input = {}
-                        input['TaskRoleContract'] = solidity;
+                        input['TaskRoleContract'] = solidity;//自建模型产生的solidity代码
 
                         console.log('=============================================');
                         console.log("SOLIDITY CODE");
@@ -759,9 +772,9 @@ let searchRepository = (top: number, queue: Array<string>, processData: Map<stri
                             console.log('----------------------------------------------------------------------------------------------');
                             return;
                         }
-
+                        //部署由自建模型产生的合约
                         let ProcContract = web3.eth.contract(JSON.parse(output.contracts['TaskRoleContract:TaskRoleContract_Contract'].interface));
-                        ProcContract.new(
+                        ProcContract.new(//
                             {
                                 from: web3.eth.accounts[executionAccount],
                                 data: "0x" + output.contracts['TaskRoleContract:TaskRoleContract_Contract'].bytecode,
@@ -852,7 +865,7 @@ models.post('/models', (req, res) => {
                 console.log(modelInfo.solidity);
                 console.log('....................................................................');
     
-                let output = solc.compile({sources: input}, 1);
+                let output = solc.compile({sources: input}, 1);//
                 if (Object.keys(output.contracts).length === 0) {
                     res.status(400).send('COMPILATION ERROR IN SMART CONTRACTS');
                     console.log('COMPILATION ERROR IN SMART CONTRACTS');
@@ -883,7 +896,7 @@ models.post('/models', (req, res) => {
 });
 
 // Creating a new instance of a registered (root) process
-
+//对合约创建新实例
 let caseCreatorMap: Map<string, string> = new Map();
 
 models.post('/models/:bundleId', (req, res) => {
@@ -1045,13 +1058,13 @@ models.post('/workitems/:worklistAddress/:reqId', (req, res) => {
                     let worklistInstance = web3.eth.contract(JSON.parse(repoData[0].worklistAbi)).at(worklistAddress);
                     let nodeIndex = worklistInstance.elementIndexFor.call(reqId);
                     let node = repoData[0].indexToElement[nodeIndex];
-                    let inputParams = req.body.inputParameters;
+                    let inputParams = req.body.inputParameters;//输入的参数
                     let realParameters = [];
                     let functionName = '';
 
                     realParameters = inputParams.length > 0 ? [reqId].concat(inputParams) : [reqId];
                     console.log(`WANT TO EXECUTE TASK: ${node.name}, ON WORKLIST: ${worklistAddress}`);
-                    functionName = node.name;
+                    functionName = node.name;//节点的名称正是函数名称。
 
                     worklistInstance[functionName].apply(this, realParameters.concat({
                         from: req.body.user,
@@ -1108,7 +1121,7 @@ let registerModel = (modelInfo, contracts, response) => {
     console.log('UPDATING COMPILATION ARTIFACTS IN REPOSITORY ...');
     registerModels(0, queue, nodeIndexes, modelInfo, contracts, response);
 };
-
+    
 let registerModels = (currentIndex, sortedElements, nodeIndexes, modelInfo, contracts, res) => {
     let nodeName = sortedElements[currentIndex].nodeName;
     let gNodeId = sortedElements[currentIndex].nodeId;

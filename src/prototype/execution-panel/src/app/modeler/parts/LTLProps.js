@@ -1,22 +1,20 @@
-import entryFactory from 'bpmn-js-properties-panel/lib/factory/EntryFactory';
+'use strict';
 
-import {
-  is
-} from 'bpmn-js/lib/util/ModelUtil';
+var DemoEntryFactory = require('./implementation/LTL'),
+    is = require('bpmn-js/lib/util/ModelUtil').is;
 
-//在元素的开始元素这里添加
-export default function(group, element) {
-
-  // Only return an entry, if the currently selected
-  // element is a start event.
+module.exports = function(group, element) {
 
   if (is(element, 'bpmn:Process')) {
-    group.entries.push(entryFactory.textField({
-      id : 'LTL',
-      description : 'input LTL expression',
-      label : 'LTL',
-      modelProperty : 'LTL'
-    }));
+
+    var options;
+    if (is(element, 'bpmn:TextAnnotation')) {
+      options = { modelProperty: 'text' };
+    }
+
+    group.entries = group.entries.concat(DemoEntryFactory(element, options));
+
   }
 
-}
+};
+
